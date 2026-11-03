@@ -27,38 +27,38 @@ export default function AIPanel({ data }) {
   const [insight, setInsight] = useState(null)
   const [error, setError] = useState(null)
   const ctrl = useRef(null)
-  const started = useRef(false)
   const [slot, setSlot] = useState(null)
 
   useEffect(() => {
     setSlot(document.getElementById('ai-badge-slot'))
   }, [])
 
-  const run = useCallback(async () => {
+  const run = useCallback(() => {
     ctrl.current?.abort()
     const controller = new AbortController()
     ctrl.current = controller
     setLoading(true)
     setError(null)
-    try {
-      const result = await analyseSavings(data, { signal: controller.signal })
-      if (!controller.signal.aborted) setInsight(result)
-    } catch (e) {
-      if (!controller.signal.aborted && e?.name !== 'AbortError') {
-        setError('Could not load insights. Refresh to try the fallback again.')
+    ;(async () => {
+      try {
+        const result = await analyseSavings(data, { signal: controller.signal })
+        if (!controller.signal.aborted) setInsight(result)
+      } catch (e) {
+        if (!controller.signal.aborted && e?.name !== 'AbortError') {
+          setError('Could not load insights. Refresh to try the fallback again.')
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
       }
-    } finally {
-      if (!controller.signal.aborted) setLoading(false)
-    }
+    })()
+    return controller
   }, [data])
 
   useEffect(() => {
-    if (!data || started.current) return
-    started.current = true
-    run()
+    if (!data) return
+    const controller = run()
+    return () => controller.abort()
   }, [data, run])
-
-  useEffect(() => () => ctrl.current?.abort(), [])
 
   const history = data?.savings?.contributions || []
   const pace = paceSummary({ goal: data?.goal, savings: data?.savings })
