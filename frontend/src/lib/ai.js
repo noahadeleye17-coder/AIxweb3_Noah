@@ -1,4 +1,5 @@
 import { AI_API_URL, MOCK_API_BASE_URL } from "./config";
+import { paceSummary } from "./pace";
 
 // Request/response follow the Apidog contract for POST /ai/analyse-savings.
 // The backend may also return meta{source,confidence,disclaimer} and facts{...}; both are optional.
@@ -14,6 +15,21 @@ export function buildPayload(d) {
       ? Math.round(expenses.reduce((s, t) => s + t.amount, 0) / months.size)
       : 0);
   const history = d.savings.contributions;
+  const pace = paceSummary({ goal: d.goal, savings: d.savings });
+  let monthsMet = 0;
+  let longestStreak = 0;
+  let streak = 0;
+  for (const c of history) {
+    const met = Number(c.amount) >= Number(c.planned);
+    if (met) {
+      monthsMet += 1;
+      streak += 1;
+      longestStreak = Math.max(longestStreak, streak);
+    } else {
+      streak = 0;
+    }
+  }
+  const top = d.expenses?.byCategory?.[0];
   return {
     customer: {
       customer_id: d.customerId,
@@ -44,6 +60,28 @@ export function buildPayload(d) {
         description,
         amount,
       })),
+    pace: {
+      required_monthly: pace.requiredMonthly,
+      actual_average: pace.actualAverage,
+      projected_finish_date: pace.projectedFinishDate
+        ? pace.projectedFinishDate.toISOString().slice(0, 10)
+        : null,
+      catch_up_amount: pace.catchUpPerMonth,
+      months_met: monthsMet,
+      months_missed: history.length - monthsMet,
+      longest_streak: longestStreak,
+    },
+    expense_summary: {
+      monthly_total: monthlyExpenses,
+      months_covered: d.expenses?.monthsCovered ?? months.size,
+      top_category: top?.category ?? null,
+      top_category_share: top?.share ?? null,
+      by_category: (d.expenses?.byCategory || []).map((c) => ({
+        category: c.category,
+        monthly_total: c.monthlyTotal,
+        share: c.share,
+      })),
+    },
   };
 }
 
@@ -122,11 +160,16 @@ function fromApi(json) {
   };
 }
 
-export async function analyseSavings(data) {
+export async function analyseSavings(data, { signal } = {}) {
   const payload = buildPayload(data);
   const base = AI_API_URL || MOCK_API_BASE_URL;
   if (!base) return localInsight(payload);
   const ctrl = new AbortController();
+  const onAbort = () => ctrl.abort();
+  if (signal) {
+    if (signal.aborted) ctrl.abort();
+    else signal.addEventListener("abort", onAbort, { once: true });
+  }
   const timer = setTimeout(() => ctrl.abort(), 12000);
   try {
     const res = await fetch(`${base}/ai/analyse-savings`, {
@@ -137,9 +180,11 @@ export async function analyseSavings(data) {
     });
     if (!res.ok) throw new Error(`AI service returned ${res.status}`);
     return fromApi(await res.json());
-  } catch {
+  } catch (e) {
+    if (signal?.aborted) throw e;
     return { ...localInsight(payload), source: "fallback" };
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener("abort", onAbort);
   }
 }

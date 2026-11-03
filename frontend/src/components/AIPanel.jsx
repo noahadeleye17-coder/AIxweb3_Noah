@@ -1,52 +1,151 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { analyseSavings } from '../lib/ai'
-import { formatMoney } from '../lib/format'
+import { paceSummary } from '../lib/pace'
+import { formatNgn } from '../lib/savingsContract'
 
-const LABELS = {
-  live: 'AI-generated from the data above.',
-  mockapi: 'Sample response from the mock API. It is fixed text, not generated from this data.',
-  backendmock: 'Placeholder from the backend (AI is not set to live).',
-  mock: 'Local placeholder: simple rules, no AI service connected.',
-  fallback: 'The AI service was unavailable, so this is a local placeholder.',
+const BADGES = {
+  live: { label: 'Live AI', live: true, reason: 'Live AI generated from your dashboard data.' },
+  backendmock: { label: 'Live AI', live: true, reason: 'Response came from the backend.' },
+  mockapi: { label: 'Fallback', live: false, reason: 'Live AI unavailable, showing the Apidog sample analysis.' },
+  mock: { label: 'Fallback', live: false, reason: 'Live AI unavailable, showing built-in analysis.' },
+  fallback: { label: 'Fallback', live: false, reason: 'Live AI unavailable, showing built-in analysis.' },
 }
 
-const FIGURES = (f) => [
-  ['Required per month', f.requiredMonthly != null && formatMoney(f.requiredMonthly, f.currency)],
-  ['Current monthly contribution', f.monthlySavingsContribution != null && formatMoney(f.monthlySavingsContribution, f.currency)],
-  ['Monthly gap', f.monthlyGap != null && formatMoney(f.monthlyGap, f.currency)],
-  ['Projected balance at current pace', f.projectedBalanceAtCurrentPace != null && formatMoney(f.projectedBalanceAtCurrentPace, f.currency)],
-  ['Projected shortfall', f.projectedShortfall != null && formatMoney(f.projectedShortfall, f.currency)],
-  ['Share of plan met', f.percentOfPlanMet != null && `${f.percentOfPlanMet}%`],
-].filter(([, v]) => v)
+const titleCase = (s) => String(s || 'other').replace(/(^|\s)\w/g, (c) => c.toUpperCase())
+
+const Skeleton = () => (
+  <div aria-hidden="true">
+    {[90, 70, 80].map((w, i) => (
+      <div
+        key={i}
+        style={{ height: 12, width: `${w}%`, background: '#e2e8f0', borderRadius: 6, margin: '8px 0' }}
+      />
+    ))}
+  </div>
+)
 
 export default function AIPanel({ data }) {
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [insight, setInsight] = useState(null)
-  const run = async () => {
+  const [error, setError] = useState(null)
+  const ctrl = useRef(null)
+  const started = useRef(false)
+
+  const run = useCallback(async () => {
+    ctrl.current?.abort()
+    const controller = new AbortController()
+    ctrl.current = controller
     setLoading(true)
-    setInsight(await analyseSavings(data))
-    setLoading(false)
+    setError(null)
+    try {
+      const result = await analyseSavings(data, { signal: controller.signal })
+      if (!controller.signal.aborted) setInsight(result)
+    } catch (e) {
+      if (!controller.signal.aborted && e?.name !== 'AbortError') {
+        setError('Could not load insights. Refresh to try the fallback again.')
+      }
+    } finally {
+      if (!controller.signal.aborted) setLoading(false)
+    }
+  }, [data])
+
+  useEffect(() => {
+    if (!data || started.current) return
+    started.current = true
+    run()
+  }, [data, run])
+
+  useEffect(() => () => ctrl.current?.abort(), [])
+
+  const history = data?.savings?.contributions || []
+  const pace = paceSummary({ goal: data?.goal, savings: data?.savings })
+  const monthsMet = history.filter((c) => Number(c.amount) >= Number(c.planned)).length
+  let longestStreak = 0
+  let streak = 0
+  for (const c of history) {
+    streak = Number(c.amount) >= Number(c.planned) ? streak + 1 : 0
+    longestStreak = Math.max(longestStreak, streak)
   }
+  const balance = Number(data?.savings?.currentBalance) || 0
+  const target = Number(data?.goal?.targetAmount) || 0
+  const progressPct = target ? Math.round((balance / target) * 100) : 0
+  const top = data?.expenses?.byCategory?.[0]
+  const prefillAmount = pace.onTrack
+    ? data?.savings?.plannedMonthly
+    : pace.catchUpPerMonth || pace.requiredMonthly
+  const action = insight?.suggestedAction?.label || insight?.recommendations?.[0]?.title || null
+
+  const scrollToOnchain = () => {
+    window.dispatchEvent(
+      new CustomEvent('record-contribution', { detail: { amount: prefillAmount } }),
+    )
+    document.getElementById('onchain-panel')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  }
+
+  const badge = BADGES[insight?.source] || BADGES.fallback
+
   return (
-    <section className="panel">
+    <section className="panel" aria-busy={loading}>
       <h2>Savings insights</h2>
-      {!insight ? <p className="muted">Get suggestions based on the simulated data on the left.</p> : (
+      {loading && <Skeleton />}
+      {error && <p className="err" role="alert">{error}</p>}
+      {!loading && insight && (
         <>
-          <p>{insight.summary}</p>
-          {insight.observations.length > 0 && (
-            <ul>{insight.observations.map((o, i) => <li key={i}><b>{o.type}:</b> {o.message}</li>)}</ul>
+          <p>
+            <span className={`pill ${badge.live ? 'ok' : 'warn'}`} title={badge.reason}>
+              {badge.label}
+            </span>{' '}
+            <span className="muted">{badge.reason}</span>
+          </p>
+          <p className="big">{insight.summary}</p>
+
+          <h3 className="subhead">Consistency</h3>
+          <p>Met {monthsMet} of {history.length} months, longest streak {longestStreak}.</p>
+
+          <h3 className="subhead">Spending patterns</h3>
+          <p>
+            {top
+              ? `Top category is ${titleCase(top.category)} at ${top.share}% of ${formatNgn(data.expenses?.monthlyTotal)} monthly expenses.`
+              : 'No expense data available.'}
+          </p>
+
+          <h3 className="subhead">Progress</h3>
+          <p>{formatNgn(balance)} saved, {progressPct}% of goal.</p>
+
+          <h3 className="subhead">Recommendations</h3>
+          {insight.recommendations.length > 0 ? (
+            <ul>
+              {insight.recommendations.map((r, i) => (
+                <li key={i}><b>{r.title}.</b> {r.description}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">No recommendations returned.</p>
           )}
-          {insight.recommendations.length > 0 && (
-            <ul>{insight.recommendations.map((r, i) => <li key={i}><b>{r.title}.</b> {r.description}</li>)}</ul>
+
+          <h3 className="subhead">Next actions</h3>
+          {action ? (
+            Number(prefillAmount) > 0 ? (
+              <button onClick={scrollToOnchain}>{action}</button>
+            ) : (
+              <p>{action}</p>
+            )
+          ) : (
+            <p className="muted">No next action returned.</p>
           )}
-          {insight.facts && FIGURES(insight.facts).length > 0 && (
-            <ul className="rows">{FIGURES(insight.facts).map(([k, v]) => <li key={k}><span>{k}</span><b>{v}</b></li>)}</ul>
-          )}
-          {insight.suggestedAction && <p><b>Suggested next step:</b> {insight.suggestedAction.label}</p>}
-          <p className="muted">{LABELS[insight.source]} {insight.meta?.confidence && `Confidence: ${insight.meta.confidence}. `}{insight.meta?.disclaimer || 'Suggestions only, not financial advice or a guaranteed outcome.'}</p>
+
+          <p className="muted">
+            {insight.meta?.confidence && `Confidence: ${insight.meta.confidence}. `}
+            {insight.meta?.disclaimer || 'Suggestions only, not financial advice or a guaranteed outcome.'}
+          </p>
         </>
       )}
-      <button disabled={loading} onClick={run}>{loading ? 'Analysing…' : insight ? 'Refresh insights' : 'Get insights'}</button>
+      <button disabled={loading} onClick={run}>
+        {loading ? 'Analysing…' : 'Refresh insights'}
+      </button>
     </section>
   )
 }
