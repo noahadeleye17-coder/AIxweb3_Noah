@@ -8,9 +8,11 @@ export function buildPayload(d) {
   const expenses = d.transactions.filter((t) => t.type === "expense");
   const months = new Set(expenses.map((t) => String(t.date).slice(0, 7)));
   // Estimate: no endpoint provides monthly expenses, so total expenses are divided by the months the transactions cover.
-  const monthlyExpenses = months.size
-    ? Math.round(expenses.reduce((s, t) => s + t.amount, 0) / months.size)
-    : 0;
+  const monthlyExpenses =
+    d.expenses?.monthlyTotal ??
+    (months.size
+      ? Math.round(expenses.reduce((s, t) => s + t.amount, 0) / months.size)
+      : 0);
   const history = d.savings.contributions;
   return {
     customer: {

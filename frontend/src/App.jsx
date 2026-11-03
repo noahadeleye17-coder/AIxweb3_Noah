@@ -1,7 +1,7 @@
 import { useWallet } from './hooks/useWallet'
 import { useDashboardData } from './hooks/useDashboardData'
 import WalletBar from './components/WalletBar'
-import { HouseholdPanel, GoalPanel, ContributionsPanel, TransactionsPanel } from './components/OffchainPanels'
+import { HouseholdPanel, GoalPanel, ContributionsPanel, TransactionsPanel, MoneyStrip } from './components/OffchainPanels'
 import OnchainPanel from './components/OnchainPanel'
 import AIPanel from './components/AIPanel'
 
@@ -13,7 +13,23 @@ export default function App() {
       <header>
         <div>
           <h1>Savings goal</h1>
-          {data && <p className="muted">{data.household.name} · {data.household.location} · synthetic profile</p>}
+          {data && (
+            <p className="muted">
+              {data.household.name} · {data.household.location} · synthetic profile{' '}
+              <span
+                className={`pill ${data.source === 'api' ? 'ok' : 'warn'}`}
+                title={
+                  data.source === 'api'
+                    ? 'All dashboard data came from the Apidog mock API.'
+                    : data.source === 'partial'
+                      ? 'Some API requests failed, so sample data fills the gaps.'
+                      : 'The API was unavailable, so this view uses built-in sample data.'
+                }
+              >
+                Data: {data.source === 'api' ? 'live' : 'sample'}
+              </span>
+            </p>
+          )}
         </div>
         <WalletBar wallet={wallet} />
       </header>
@@ -25,13 +41,19 @@ export default function App() {
             <p className="notice">{data.source === 'sample' ? 'Showing built-in sample data. Set VITE_API_BASE_URL in .env to use the Apidog data.' : 'Some endpoints failed, so sample data fills the gaps.'}</p>
           )}
           {data.warnings.map((w) => <p className="notice" key={w}>{w}</p>)}
+          <MoneyStrip
+            household={data.household}
+            expenses={data.expenses}
+            savings={data.savings}
+            currency={data.currency}
+          />
           <div className="grid">
             <div className="col">
               <h3 className="colhead bank">Bank data (simulated)</h3>
               <GoalPanel goal={data.goal} savings={data.savings} currency={data.currency} />
-              <HouseholdPanel household={data.household} currency={data.currency} />
+              <HouseholdPanel household={data.household} expenses={data.expenses} currency={data.currency} />
               <ContributionsPanel savings={data.savings} currency={data.currency} />
-              <TransactionsPanel transactions={data.transactions} />
+              <TransactionsPanel transactions={data.transactions} currency={data.currency} />
             </div>
             <div className="col">
               <h3 className="colhead chain">Blockchain (test network)</h3>

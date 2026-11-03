@@ -16,7 +16,59 @@ const REQUIRED = {
   savings: [["history", "contributions"]],
   goal: [["target_amount"]],
 };
-const has = (json, keys) => keys.some((k) => json?.[k] !== undefined);
+const has = (json, keys) => keys.some((k) => json?.[k] !== undefined)
+
+// The mock API uses placeholder names. Map them in one place so every screen
+// tells the same David and Amara story without editing the source data.
+export const DISPLAY_NAMES = {
+  person_001: 'David',
+  person_002: 'Amara',
+  'Member A': 'David',
+  'Member B': 'Amara',
+  'Household A': 'David and Amara',
+}
+
+const displayName = (person) =>
+  DISPLAY_NAMES[person?.id] || DISPLAY_NAMES[person?.name] || person?.name || 'Member'
+
+const isExpense = (t) => t.type === 'expense' || t.type === 'debit'
+
+function summariseExpenses(transactions) {
+  const expenses = transactions.filter(isExpense)
+  const months = new Set(
+    expenses
+      .map((t) => String(t.date).slice(0, 7))
+      .filter((m) => /^\d{4}-\d{2}$/.test(m)),
+  )
+  const monthsCovered = months.size
+  const divisor = Math.max(monthsCovered, 1)
+  const byCategory = new Map()
+  let totalInData = 0
+
+  for (const t of expenses) {
+    const amount = Number(t.amount) || 0
+    const category = t.category || 'other'
+    totalInData += amount
+    byCategory.set(category, (byCategory.get(category) || 0) + amount)
+  }
+
+  const monthlyTotal = Math.round(totalInData / divisor)
+  return {
+    monthlyTotal,
+    totalInData,
+    monthsCovered,
+    byCategory: [...byCategory]
+      .map(([category, total]) => {
+        const monthly = Math.round(total / divisor)
+        return {
+          category,
+          monthlyTotal: monthly,
+          share: monthlyTotal ? Math.round((monthly / monthlyTotal) * 100) : 0,
+        }
+      })
+      .sort((a, b) => b.monthlyTotal - a.monthlyTotal),
+  }
+};
 
 async function getJson(path, timeoutMs = 6000) {
   const ctrl = new AbortController();
@@ -35,15 +87,31 @@ export function normalise(raw) {
   const members = c.household?.members || [];
   const rows = s.history ?? s.contributions ?? [];
   const monthlyTarget = s.monthly_target ?? s.planned_monthly_contribution;
+  const transactions = (t.transactions || []).map(
+    ({ id, date, type, category, description, amount }) => ({
+      id,
+      date,
+      type,
+      category,
+      description,
+      amount,
+    }),
+  );
+  const householdMembers = members.map((m) => ({
+    id: m.id,
+    name: displayName(m),
+    age: m.age,
+    monthlyIncome: Number(m.monthly_income) || 0,
+  }));
   return {
     customerId: c.id,
     currency: c.currency || s.currency || t.currency || "NGN",
     household: {
-      name: c.household?.name,
+      name: DISPLAY_NAMES[c.household?.name] || c.household?.name,
       location: c.household?.location,
-      members,
-      monthlyIncome: members.reduce(
-        (sum, m) => sum + (m.monthly_income || 0),
+      members: householdMembers,
+      monthlyIncome: householdMembers.reduce(
+        (sum, m) => sum + m.monthlyIncome,
         0,
       ),
     },
@@ -74,16 +142,8 @@ export function normalise(raw) {
         balanceAfter: x.balance_after ?? x.balance_after_contribution,
       })),
     },
-    transactions: (t.transactions || []).map(
-      ({ id, date, type, category, description, amount }) => ({
-        id,
-        date,
-        type,
-        category,
-        description,
-        amount,
-      }),
-    ),
+    transactions,
+    expenses: summariseExpenses(transactions),
   };
 }
 

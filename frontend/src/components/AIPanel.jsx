@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { analyseSavings } from '../lib/ai'
+import { formatMoney } from '../lib/format'
 
 const LABELS = {
   live: 'AI-generated from the data above.',
@@ -9,13 +10,12 @@ const LABELS = {
   fallback: 'The AI service was unavailable, so this is a local placeholder.',
 }
 
-const money = (n, c) => `${c || ''} ${Number(n).toLocaleString()}`.trim()
 const FIGURES = (f) => [
-  ['Required per month', f.requiredMonthly != null && money(f.requiredMonthly, f.currency)],
-  ['Current monthly contribution', f.monthlySavingsContribution != null && money(f.monthlySavingsContribution, f.currency)],
-  ['Monthly gap', f.monthlyGap != null && money(f.monthlyGap, f.currency)],
-  ['Projected balance at current pace', f.projectedBalanceAtCurrentPace != null && money(f.projectedBalanceAtCurrentPace, f.currency)],
-  ['Projected shortfall', f.projectedShortfall != null && money(f.projectedShortfall, f.currency)],
+  ['Required per month', f.requiredMonthly != null && formatMoney(f.requiredMonthly, f.currency)],
+  ['Current monthly contribution', f.monthlySavingsContribution != null && formatMoney(f.monthlySavingsContribution, f.currency)],
+  ['Monthly gap', f.monthlyGap != null && formatMoney(f.monthlyGap, f.currency)],
+  ['Projected balance at current pace', f.projectedBalanceAtCurrentPace != null && formatMoney(f.projectedBalanceAtCurrentPace, f.currency)],
+  ['Projected shortfall', f.projectedShortfall != null && formatMoney(f.projectedShortfall, f.currency)],
   ['Share of plan met', f.percentOfPlanMet != null && `${f.percentOfPlanMet}%`],
 ].filter(([, v]) => v)
 

@@ -1,0 +1,7 @@
+# Local environment values, never commit secrets
+.env
+.env.local
+
+# Build output and dependencies
+dist
+node_modules
