@@ -128,8 +128,8 @@ export function GoalPanel({ goal, savings, currency }) {
   const pct = Math.max(0, Math.min(100, Math.round(goal.progress ?? 0)))
   const recordedMonths = savings.contributions.length
   const monthsRemaining = Number(goal.monthsRemaining) || 0
-  const planMonths = recordedMonths + monthsRemaining || recordedMonths || 1
-  const planMonth = Math.min(recordedMonths || 1, planMonths)
+  const planMonths = Number(goal.planMonths) || recordedMonths + monthsRemaining || recordedMonths || 1
+  const planMonth = Number(goal.planMonth) || Math.min(recordedMonths || 1, planMonths)
 
   return (
     <div className="hero-goal">

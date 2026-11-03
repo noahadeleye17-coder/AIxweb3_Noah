@@ -50,7 +50,7 @@ function SectionNav() {
 
 export default function App() {
   const wallet = useWallet()
-  const { loading, error, data, reload } = useDashboardData()
+  const { loading, error, data, reload, onchainGoal, refreshGoal, onGoalCreated, goalVersion } = useDashboardData(wallet)
   return (
     <main>
       <header className="topbar">
@@ -127,13 +127,16 @@ export default function App() {
           </section>
 
           <section id="insights" className="page-section">
-            <AIPanel data={data} />
+            <AIPanel key={goalVersion} data={data} />
           </section>
 
           <section id="onchain" className="page-section">
             <OnchainPanel
               wallet={wallet}
-              defaults={{ targetAmount: data.goal.targetAmount, targetDate: data.goal.targetDate }}
+              data={data}
+              onchainGoal={onchainGoal}
+              refreshGoal={refreshGoal}
+              onGoalCreated={onGoalCreated}
             />
           </section>
         </>
