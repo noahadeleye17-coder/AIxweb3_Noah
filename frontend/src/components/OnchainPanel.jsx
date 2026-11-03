@@ -55,8 +55,11 @@ export default function OnchainPanel({ wallet }) {
 
   return (
     <section id="onchain-panel" className="panel chain">
-      <h2>On-chain demo record</h2>
-      <p className="muted">Celo Sepolia test network. The contract records numbers only; no real money moves and nothing here is checked against a real payment.</p>
+      <div className="section-head">
+        <p className="eyebrow">On-chain</p>
+        <h2>On-chain record</h2>
+        <p className="section-sub">Celo Sepolia test network; the contract records numbers only, so no real money moves.</p>
+      </div>
       {!ready ? (
         <p>
           {status === 'connected'
@@ -65,13 +68,19 @@ export default function OnchainPanel({ wallet }) {
         </p>
       ) : (
         <>
-          {offchainBalance != null && (
-            <p className="big">
-              {formatNgn(offchainBalance)} <span>off-chain · Recorded on-chain: {formatNgn(onchainTotal)} · difference {formatNgn(difference)}</span>
-            </p>
-          )}
+          <div className="chain-stats">
+            <div className="chain-stat">
+              <span>Off-chain balance</span>
+              <b>{offchainBalance != null ? formatNgn(offchainBalance) : '—'}</b>
+            </div>
+            <div className="chain-stat">
+              <span>Recorded on-chain</span>
+              <b>{formatNgn(onchainTotal)}</b>
+            </div>
+          </div>
+          <p className="muted">Difference {formatNgn(difference)}.</p>
           {goal?.active ? (
-            <p className="big">{formatNgn(goal.totalContributed)} <span>recorded of {formatNgn(goal.targetAmount)} · due {formatDate(new Date(goal.targetDate * 1000))}</span></p>
+            <p className="goal-line">{formatNgn(goal.totalContributed)} recorded of {formatNgn(goal.targetAmount)} · due {formatDate(new Date(goal.targetDate * 1000))}</p>
           ) : <p>No active on-chain goal for this wallet yet.</p>}
           <div className="form">
             <label>Target amount<input type="number" min="1" value={target} onChange={(e) => setTarget(e.target.value)} /></label>

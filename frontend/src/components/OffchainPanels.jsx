@@ -9,32 +9,17 @@ const percent = (n) =>
 export function MoneyStrip({ household, expenses, savings }) {
   const income = household.monthlyIncome || 0
   const expenseTotal = expenses?.monthlyTotal || 0
-  const expensePct = income ? Math.min(100, Math.round((expenseTotal / income) * 100)) : 0
   const savingsRate = income
     ? Math.max(0, Math.round(((income - expenseTotal) / income) * 100))
     : 0
 
   return (
-    <section className="panel bank" aria-label="Monthly money flow">
-      <h2>This month at a glance</h2>
-      <div className="money-strip">
-        <div><span>Monthly income</span><b>{formatNgn(income)}</b></div>
-        <div><span>Monthly expenses</span><b>{formatNgn(expenseTotal)}</b></div>
-        <div><span>Savings rate</span><b>{savingsRate}%</b></div>
-      </div>
-      <div
-        className="flowbar"
-        role="img"
-        aria-label={`Expenses are ${expensePct}% and the savings rate is ${savingsRate}% of monthly income.`}
-      >
-        <i className="flow-expense" style={{ width: `${expensePct}%` }} />
-        <i className="flow-save" style={{ width: `${savingsRate}%` }} />
-      </div>
-      <p className="muted">
-        Expenses {expensePct}% · savings rate {savingsRate}% · planned saving{' '}
-        {formatNgn(savings.plannedMonthly)} of income.
-      </p>
-    </section>
+    <div className="kpi-grid" aria-label="Monthly money flow">
+      <div className="kpi"><span>Monthly income</span><b>{formatNgn(income)}</b></div>
+      <div className="kpi"><span>Monthly expenses</span><b>{formatNgn(expenseTotal)}</b></div>
+      <div className="kpi"><span>Savings rate</span><b>{savingsRate}%</b></div>
+      <div className="kpi"><span>Current balance</span><b>{formatNgn(savings.currentBalance)}</b></div>
+    </div>
   )
 }
 
@@ -54,68 +39,88 @@ export function PacePanel({ goal, savings }) {
     })
   }
 
+  const status = pace.goalReached ? 'Goal reached' : pace.onTrack ? 'On track' : 'Behind'
+
   return (
-    <section className="panel bank">
-      <h2>Pace</h2>
-      <p className={`pill ${pace.goalReached || pace.onTrack ? 'on-track' : 'behind'}`}>
-        {pace.goalReached
-          ? 'Goal reached'
-          : pace.onTrack
-            ? 'On track'
-            : `Behind by ${formatNgn(pace.behindBy)}: add ${formatNgn(pace.catchUpPerMonth)} per month to finish on time`}
-      </p>
-      <p className="muted">
-        Required {formatNgn(pace.requiredMonthly)}/month · current pace{' '}
-        {formatNgn(pace.actualAverage)}/month ·{' '}
-        {pace.goalReached
-          ? 'goal reached'
-          : pace.projectedFinishDate
-            ? `projected finish ${formatDate(pace.projectedFinishDate)}`
-            : 'no contributions yet'}
-      </p>
+    <div className="pace-card">
+      <div className="pace-head">
+        <p className="mini-label">Pace status</p>
+        <span className={`pill ${pace.goalReached || pace.onTrack ? 'on-track' : 'behind'}`}>
+          {status}
+        </span>
+      </div>
+      {!pace.goalReached && !pace.onTrack && (
+        <p className="pace-behind">
+          Behind by {formatNgn(pace.behindBy)} · add {formatNgn(pace.catchUpPerMonth)} per month
+        </p>
+      )}
+      <dl className="pace-facts">
+        <div>
+          <dt>Required each month</dt>
+          <dd>{formatNgn(pace.requiredMonthly)}</dd>
+        </div>
+        <div>
+          <dt>Current pace</dt>
+          <dd>{formatNgn(pace.actualAverage)}</dd>
+        </div>
+        <div>
+          <dt>Projected finish</dt>
+          <dd>
+            {pace.goalReached
+              ? 'Goal reached'
+              : pace.projectedFinishDate
+                ? formatDate(pace.projectedFinishDate)
+                : 'No contributions yet'}
+          </dd>
+        </div>
+      </dl>
       {!pace.goalReached && (
         <button onClick={record}>Record this month's contribution</button>
       )}
-    </section>
+    </div>
   )
 }
 
 export function HouseholdPanel({ household, expenses, currency }) {
   return (
-    <section className="panel bank">
-      <h2>Household</h2>
-      <ul className="rows">
-        {household.members.map((m) => (
-          <li key={m.id || m.name}>
-            <span>{m.name}{m.age ? `, age ${m.age}` : ''}</span>
-            <b>{formatNgn(m.monthlyIncome, currency)} / month</b>
-          </li>
-        ))}
-      </ul>
-      <p className="muted">Combined monthly income {formatNgn(household.monthlyIncome, currency)}.</p>
+    <div className="expense-card">
+      <div className="expense-members">
+        <h3 className="subhead">Household</h3>
+        <ul className="rows compact">
+          {household.members.map((m) => (
+            <li key={m.id || m.name}>
+              <span>{m.name}{m.age ? `, age ${m.age}` : ''}</span>
+              <b>{formatNgn(m.monthlyIncome, currency)} / month</b>
+            </li>
+          ))}
+        </ul>
+        <p className="muted">Combined monthly income {formatNgn(household.monthlyIncome, currency)}.</p>
+      </div>
 
-      <h3 className="subhead">Monthly expenses</h3>
-      {expenses?.monthlyTotal > 0 ? (
-        <>
-          <ul className="rows">
-            {expenses.byCategory.map((cat) => (
-              <li key={cat.category}>
-                <span>{titleCase(cat.category)} <span className="muted">({cat.share}%)</span></span>
-                <b>{formatNgn(cat.monthlyTotal, currency)}</b>
-              </li>
-            ))}
-          </ul>
-          <p className="muted">
-            Total {formatNgn(expenses.monthlyTotal, currency)}
-            {expenses.monthsCovered > 0 &&
-              ` · averaged over ${expenses.monthsCovered} month${expenses.monthsCovered === 1 ? '' : 's'} of transactions`}
-            .
-          </p>
-        </>
-      ) : (
-        <p className="muted">No expense transactions in the current data.</p>
-      )}
-    </section>
+      <div className="expense-breakdown">
+        <h3 className="subhead">Expenses by category</h3>
+        {expenses?.monthlyTotal > 0 ? (
+          <>
+            <ul className="rows compact">
+              {expenses.byCategory.map((cat) => (
+                <li key={cat.category}>
+                  <span>{titleCase(cat.category)} <span className="muted">({cat.share}%)</span></span>
+                  <b>{formatNgn(cat.monthlyTotal, currency)}</b>
+                </li>
+              ))}
+            </ul>
+            <p className="muted">
+              Total {formatNgn(expenses.monthlyTotal, currency)}
+              {expenses.monthsCovered > 0 &&
+                ` · averaged over ${expenses.monthsCovered} month${expenses.monthsCovered === 1 ? '' : 's'} of transactions`}
+              .
+            </p>
+          </>
+        ) : (
+          <p className="muted">No expense transactions in the current data.</p>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -127,14 +132,15 @@ export function GoalPanel({ goal, savings, currency }) {
   const planMonth = Math.min(recordedMonths || 1, planMonths)
 
   return (
-    <section className="panel bank">
-      <h2>{goal.name}</h2>
-      <p className="muted">{goal.purpose}</p>
-      <p className="planline">
-        <b>{planMonths}-month plan</b> · Month {planMonth} of {planMonths}
-        {recordedMonths > 0 && ` · ${recordedMonths} month${recordedMonths === 1 ? '' : 's'} recorded`}
-      </p>
-      <p className="big">
+    <div className="hero-goal">
+      <div className="hero-goal-head">
+        <div>
+          <p className="mini-label">Goal progress</p>
+          <h3>{goal.name}</h3>
+        </div>
+        <p className="muted">{goal.purpose}</p>
+      </div>
+      <p className="big goal-amount">
         {formatNgn(savings.currentBalance, currency)}{' '}
         <span>of {formatNgn(goal.targetAmount, currency)}</span>
       </p>
@@ -148,19 +154,21 @@ export function GoalPanel({ goal, savings, currency }) {
       >
         <i style={{ width: `${pct}%` }} />
       </div>
-      <p className="muted">
-        {percent(goal.progress)}% saved · {formatNgn(goal.amountRemaining, currency)} to go · target{' '}
-        {formatDate(goal.targetDate)}
-      </p>
-      <ul className="rows">
-        <li><span>Target</span><b>{formatNgn(goal.targetAmount, currency)}</b></li>
-        <li><span>Current balance</span><b>{formatNgn(savings.currentBalance, currency)}</b></li>
-        <li><span>Remaining</span><b>{formatNgn(goal.amountRemaining, currency)}</b></li>
-        <li><span>Progress</span><b>{percent(goal.progress)}%</b></li>
-        <li><span>Planned monthly contribution</span><b>{formatNgn(savings.plannedMonthly, currency)}</b></li>
-        <li><span>Needed each month</span><b>{formatNgn(goal.requiredMonthly, currency)}</b></li>
-      </ul>
-    </section>
+      <div className="goal-meta">
+        <div>
+          <b>Month {planMonth} of {planMonths}</b>
+          <em>{recordedMonths} month{recordedMonths === 1 ? '' : 's'} recorded · {percent(goal.progress)}% saved</em>
+        </div>
+        <div>
+          <b>{formatNgn(goal.amountRemaining, currency)}</b>
+          <em>remaining</em>
+        </div>
+        <div>
+          <b>{formatDate(goal.targetDate)}</b>
+          <em>target date</em>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -185,19 +193,15 @@ export function ContributionsPanel({ savings, currency }) {
   const barW = Math.max(2, (groupW - 10) / 2)
 
   return (
-    <section className="panel bank">
-      <h2>Savings</h2>
-      <ul className="rows">
-        <li><span>Current balance</span><b>{formatNgn(savings.currentBalance, currency)}</b></li>
-        <li><span>Total contributed</span><b>{formatNgn(savings.totalContributed, currency)}</b></li>
-        <li><span>Total withdrawn</span><b>{formatNgn(savings.totalWithdrawn, currency)}</b></li>
-        <li><span>Monthly target</span><b>{formatNgn(savings.plannedMonthly, currency)}</b></li>
-        <li><span>Contribution frequency</span><b>{savings.frequency ?? '—'}</b></li>
-      </ul>
-      <h3 className="subhead">History</h3>
+    <div className="panel activity-chart">
+      <div className="chart-head">
+        <h3>Planned vs actual</h3>
+        <p className="muted">Planned (blue) vs actual (emerald).</p>
+      </div>
       {list.length === 0 ? <p className="muted">No history yet.</p> : (
         <>
           <svg
+            className="savings-chart"
             viewBox={`0 0 ${W} ${H}`}
             width="100%"
             role="img"
@@ -220,8 +224,7 @@ export function ContributionsPanel({ savings, currency }) {
               )
             })}
           </svg>
-          <p className="muted">Planned (grey) vs actual (green).</p>
-          <p className="muted">Met {metCount} of {list.length} months, longest streak {longest}.</p>
+          <p className="consistency">Met {metCount} of {list.length} months, longest streak {longest}.</p>
           <details>
             <summary>Show history table</summary>
             <div className="wrap">
@@ -242,14 +245,21 @@ export function ContributionsPanel({ savings, currency }) {
           </details>
         </>
       )}
-    </section>
+      <dl className="savings-facts">
+        <div><dt>Current balance</dt><dd>{formatNgn(savings.currentBalance, currency)}</dd></div>
+        <div><dt>Total contributed</dt><dd>{formatNgn(savings.totalContributed, currency)}</dd></div>
+        <div><dt>Total withdrawn</dt><dd>{formatNgn(savings.totalWithdrawn, currency)}</dd></div>
+        <div><dt>Monthly target</dt><dd>{formatNgn(savings.plannedMonthly, currency)}</dd></div>
+        <div><dt>Contribution frequency</dt><dd>{savings.frequency ?? '—'}</dd></div>
+      </dl>
+    </div>
   )
 }
 
 export function TransactionsPanel({ transactions, currency }) {
   return (
-    <section className="panel bank">
-      <h2>Recent transactions</h2>
+    <div className="panel activity-table">
+      <h3>Recent transactions</h3>
       {transactions.length === 0 ? <p className="muted">No transactions found.</p> : (
         <ul className="rows">
           {transactions.map((t) => {
@@ -263,6 +273,6 @@ export function TransactionsPanel({ transactions, currency }) {
           })}
         </ul>
       )}
-    </section>
+    </div>
   )
 }
