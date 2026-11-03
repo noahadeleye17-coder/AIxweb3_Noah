@@ -27,6 +27,15 @@ export default function OnchainPanel({ wallet }) {
     if (amount === '' && monthlyTarget != null) setAmount(String(monthlyTarget))
   }, [amount, monthlyTarget])
 
+  useEffect(() => {
+    const prefills = (e) => {
+      const value = Number(e.detail?.amount)
+      if (value > 0) setAmount(String(Math.round(value)))
+    }
+    window.addEventListener('record-contribution', prefills)
+    return () => window.removeEventListener('record-contribution', prefills)
+  }, [])
+
   const refresh = useCallback(async () => {
     try { setGoal(await readGoal(signer)) } catch (e) { setMsg({ kind: 'err', text: friendlyError(e) }) }
   }, [signer])
@@ -45,7 +54,7 @@ export default function OnchainPanel({ wallet }) {
   const difference = Number(offchainBalance ?? 0) - Number(onchainTotal)
 
   return (
-    <section className="panel chain">
+    <section id="onchain-panel" className="panel chain">
       <h2>On-chain demo record</h2>
       <p className="muted">Celo Sepolia test network. The contract records numbers only; no real money moves and nothing here is checked against a real payment.</p>
       {!ready ? (

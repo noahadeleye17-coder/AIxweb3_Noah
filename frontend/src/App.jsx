@@ -1,7 +1,7 @@
 import { useWallet } from './hooks/useWallet'
 import { useDashboardData } from './hooks/useDashboardData'
 import WalletBar from './components/WalletBar'
-import { HouseholdPanel, GoalPanel, ContributionsPanel, TransactionsPanel, MoneyStrip } from './components/OffchainPanels'
+import { HouseholdPanel, GoalPanel, ContributionsPanel, TransactionsPanel, MoneyStrip, PacePanel } from './components/OffchainPanels'
 import OnchainPanel from './components/OnchainPanel'
 import AIPanel from './components/AIPanel'
 
@@ -51,6 +51,7 @@ export default function App() {
             <div className="col">
               <h3 className="colhead bank">Bank data (simulated)</h3>
               <GoalPanel goal={data.goal} savings={data.savings} currency={data.currency} />
+              <PacePanel goal={data.goal} savings={data.savings} />
               <HouseholdPanel household={data.household} expenses={data.expenses} currency={data.currency} />
               <ContributionsPanel savings={data.savings} currency={data.currency} />
               <TransactionsPanel transactions={data.transactions} currency={data.currency} />
