@@ -57,7 +57,7 @@ export function PacePanel({ goal, savings }) {
   return (
     <section className="panel bank">
       <h2>Pace</h2>
-      <p className={`pill ${pace.goalReached || pace.onTrack ? 'ok' : 'warn'}`}>
+      <p className={`pill ${pace.goalReached || pace.onTrack ? 'on-track' : 'behind'}`}>
         {pace.goalReached
           ? 'Goal reached'
           : pace.onTrack
@@ -204,16 +204,16 @@ export function ContributionsPanel({ savings, currency }) {
             aria-label={`Actual versus planned contributions for ${list.length} months. Met ${metCount} of ${list.length}.`}
             style={{ display: 'block' }}
           >
-            <line x1={padX} y1={baseline} x2={W - padX} y2={baseline} stroke="#94a3b8" strokeWidth="1" />
+            <line className="chart-grid" x1={padX} y1={baseline} x2={W - padX} y2={baseline} />
             {list.map((c, i) => {
               const x = padX + i * groupW + 2
               const plannedH = ((Number(c.planned) || 0) / max) * (baseline - padTop)
               const actualH = ((Number(c.amount) || 0) / max) * (baseline - padTop)
               return (
                 <g key={c.month}>
-                  <rect x={x} y={baseline - plannedH} width={barW} height={plannedH} fill="#cbd5e1" />
-                  <rect x={x + barW + 2} y={baseline - actualH} width={barW} height={actualH} fill="#16a34a" />
-                  <text x={x + barW + 1} y={H - 8} textAnchor="middle" fontSize="9" fill="#64748b">
+                  <rect className="bar-planned" x={x} y={baseline - plannedH} width={barW} height={plannedH} rx="2" />
+                  <rect className="bar-actual" x={x + barW + 2} y={baseline - actualH} width={barW} height={actualH} rx="2" />
+                  <text className="chart-label" x={x + barW + 1} y={H - 8} textAnchor="middle">
                     {formatMonth(c.month, 'numeric')}
                   </text>
                 </g>

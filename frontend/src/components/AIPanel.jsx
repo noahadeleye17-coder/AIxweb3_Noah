@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { analyseSavings } from '../lib/ai'
 import { paceSummary } from '../lib/pace'
 import { formatNgn } from '../lib/savingsContract'
@@ -16,10 +17,7 @@ const titleCase = (s) => String(s || 'other').replace(/(^|\s)\w/g, (c) => c.toUp
 const Skeleton = () => (
   <div aria-hidden="true">
     {[90, 70, 80].map((w, i) => (
-      <div
-        key={i}
-        style={{ height: 12, width: `${w}%`, background: '#e2e8f0', borderRadius: 6, margin: '8px 0' }}
-      />
+      <div key={i} className="skeleton" style={{ width: `${w}%` }} />
     ))}
   </div>
 )
@@ -30,6 +28,11 @@ export default function AIPanel({ data }) {
   const [error, setError] = useState(null)
   const ctrl = useRef(null)
   const started = useRef(false)
+  const [slot, setSlot] = useState(null)
+
+  useEffect(() => {
+    setSlot(document.getElementById('ai-badge-slot'))
+  }, [])
 
   const run = useCallback(async () => {
     ctrl.current?.abort()
@@ -90,16 +93,17 @@ export default function AIPanel({ data }) {
   return (
     <section className="panel" aria-busy={loading}>
       <h2>Savings insights</h2>
+      {insight && slot && createPortal(
+        <span className={`pill ${badge.live ? 'live' : 'fallback'}`} title={badge.reason}>
+          {badge.label}
+        </span>,
+        slot,
+      )}
       {loading && <Skeleton />}
       {error && <p className="err" role="alert">{error}</p>}
       {!loading && insight && (
         <>
-          <p>
-            <span className={`pill ${badge.live ? 'ok' : 'warn'}`} title={badge.reason}>
-              {badge.label}
-            </span>{' '}
-            <span className="muted">{badge.reason}</span>
-          </p>
+          <p className="muted">{badge.reason}</p>
           <p className="big">{insight.summary}</p>
 
           <h3 className="subhead">Consistency</h3>

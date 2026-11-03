@@ -10,7 +10,7 @@ export default function WalletBar({ wallet }) {
       {status === 'connected' ? (
         <>
           <a href={addressLink(address)} target="_blank" rel="noreferrer" className="addr">{short(address)}</a>
-          <span className={wrongNetwork ? 'pill warn' : 'pill ok'}>{wrongNetwork ? 'Wrong network' : CELO_SEPOLIA.chainName}</span>
+          <span className={wrongNetwork ? 'pill error' : 'pill on-track'}>{wrongNetwork ? 'Wrong network' : CELO_SEPOLIA.chainName}</span>
           {wrongNetwork && <button onClick={wallet.switchNetwork}>Switch to Celo Sepolia</button>}
           <button className="ghost" onClick={wallet.disconnect}>Disconnect</button>
         </>
