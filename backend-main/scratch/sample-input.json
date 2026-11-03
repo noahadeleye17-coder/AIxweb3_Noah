@@ -1,0 +1,64 @@
+
+{
+  "customer": {
+    "customer_id": "customer_001",
+    "household_name": "David and Amara",
+    "currency": "NGN"
+  },
+  "financial_summary": {
+    "monthly_household_income": 850000,
+    "current_savings_balance": 650000,
+    "target_amount": 2000000,
+    "monthly_expenses": 550000,
+    "monthly_savings_contribution": 100000,
+    "target_date": "2027-10-01"
+  },
+  "savings_history": [
+      {
+        "month": "2026-01",
+        "planned": 166667, 
+        "actual": 150000,
+        "balance_after_contribution": 1850000
+      },
+      {
+        "month": "2026-02",
+        "planned": 166667, 
+        "actual": 160000,
+        "balance_after_contribution": 1690000
+      },
+      {
+        "month": "2026-03",
+        "planned": 166667, 
+        "actual": 140000,
+        "balance_after_contribution": 1550000
+      },
+      {
+        "month": "2026-04",
+        "planned": 166667, 
+        "actual": 100000,
+        "balance_after_contribution": 1450000
+      },
+      {
+        "month": "2026-05",
+        "planned": 166667, 
+        "actual": 0,
+        "balance_after_contribution": 1450000
+      },
+      {
+        "month": "2026-04",
+        "planned": 166667, 
+        "actual": 100000,
+        "balance_after_contribution": 1350000
+      }
+
+  ],
+  "recent_transactions": [
+    {
+      "date": "2026-10-05",
+      "type": "expense",
+      "category": "groceries",
+      "description": "Monthly grocery shopping",
+      "amount": 85000
+    }
+  ]
+}

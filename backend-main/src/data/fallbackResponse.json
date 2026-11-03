@@ -1,0 +1,59 @@
+{
+  "summary": {
+    "goal_reached": "{{household}} have already reached their {{targetAmount}} goal, with {{currentBalance}} saved.",
+    "no_contribution": "{{household}} have saved {{currentBalance}} toward their {{targetAmount}} goal, but no monthly contribution is being made at present. Without contributions, the balance would stay at {{currentBalance}} by {{targetDate}}, which is {{projectedShortfall}} short of the goal.",
+    "behind_declining": "{{household}}'s savings contributions have been declining. At the current pace of {{monthlySavingsContribution}} a month, they would reach {{projectedBalance}} by {{targetDate}}, which is {{projectedShortfall}} short of the {{targetAmount}} goal.",
+    "behind": "{{household}} have saved {{currentBalance}} toward their {{targetAmount}} goal. At the current pace of {{monthlySavingsContribution}} a month, they would reach {{projectedBalance}} by {{targetDate}}, which is {{projectedShortfall}} short.",
+    "on_track": "{{household}} have saved {{currentBalance}} toward their {{targetAmount}} goal. At the current pace of {{monthlySavingsContribution}} a month, they are on track to reach the goal by {{targetDate}}."
+  },
+  "consistency": {
+    "no_history": "No monthly saving history was provided, so consistency could not be assessed.",
+    "never_met": "No tracked month met the planned contribution of {{plannedMonthly}}. Contributions averaged {{averageActualMonthly}} a month over {{monthsTracked}} months, which is {{shortfallVsPlan}} below the plan.",
+    "all_met": "Every tracked month met the planned contribution of {{plannedMonthly}}, over {{monthsTracked}} months.",
+    "some_met": "{{monthsMetPlan}} of {{monthsTracked}} tracked months met the planned contribution of {{plannedMonthly}}. Contributions averaged {{averageActualMonthly}} a month."
+  },
+  "consistencyExtras": {
+    "zeroMonths": "No contribution was made in {{monthsWithZero}}.",
+    "declining": "Contributions fell from an average of {{earlierAverage}} earlier to {{recentAverage}} more recently.",
+    "improving": "Contributions rose from an average of {{earlierAverage}} earlier to {{recentAverage}} more recently.",
+    "steady": "Contributions have been steady across the tracked months."
+  },
+  "spending": {
+    "normal": "Monthly expenses take {{expenseSharePercent}}% of income, leaving {{incomeAfterExpenses}} a month after expenses.",
+    "no_expenses": "No monthly expenses were provided, so spending could not be assessed.",
+    "over_income": "Monthly expenses of {{monthlyExpenses}} are higher than monthly income of {{monthlyIncome}}, so there is nothing left to save without reducing spending."
+  },
+  "progress": {
+    "goal_reached": "{{currentBalance}} is saved against a {{targetAmount}} target, so the goal has been reached.",
+    "behind": "{{percentComplete}}% of the {{targetAmount}} target is saved ({{currentBalance}}). At the current pace the balance would reach {{projectedBalance}} by {{targetDate}}, which is {{projectedShortfall}} short of the goal.",
+    "on_track": "{{percentComplete}}% of the {{targetAmount}} target is saved ({{currentBalance}}). At the current pace the balance would reach {{projectedBalance}} by {{targetDate}}, enough to meet the goal."
+  },
+  "recommendations": {
+    "closeGap": {
+      "title": "Close the monthly gap",
+      "description": "Saving {{requiredMonthly}} a month, which is {{monthlyGap}} more than now, would reach the target by {{targetDate}}. That is about {{requiredShare}}% of monthly income."
+    },
+    "closeGapMissed": "If a month is missed, the amount needed each month rises to {{newRequiredMonthly}}.",
+    "keepGoing": {
+      "title": "Keep the current routine",
+      "description": "Continue saving {{monthlySavingsContribution}} a month and record each contribution as it is made."
+    },
+    "nextStep": {
+      "title": "Plan the next step",
+      "description": "The target has been reached. Consider setting a new goal, or confirm that this one is complete."
+    },
+    "automate": {
+      "title": "Make saving automatic",
+      "description": "Set up a recurring transfer or reminder for the day income arrives, so every month meets the plan."
+    },
+    "reviewSpending": {
+      "title": "Review monthly spending",
+      "description": "Look through recurring expenses, which take {{expenseSharePercent}}% of income, for room to raise contributions."
+    },
+    "reviewProgress": {
+      "title": "Check progress each month",
+      "description": "Compare each month's contribution with the plan and adjust early if it falls behind."
+    }
+  },
+  "action": { "label": "Review monthly savings plan" }
+}
